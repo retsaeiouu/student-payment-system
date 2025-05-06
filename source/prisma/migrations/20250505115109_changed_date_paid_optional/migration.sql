@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Fee" ALTER COLUMN "datePaid" DROP NOT NULL;
