@@ -3,7 +3,6 @@
 import prisma from "@/shared/prisma"
 import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
-import { Prisma } from "../../../generated/prisma"
 
 export async function getStudentByAccountEmail(accountEmail: string) {
   return await prisma.student.findUnique({
@@ -43,26 +42,35 @@ export async function newPayment(feeId: number, amount: number, reference: numbe
   redirect(`/app/${created.id}`)
 }
 
-// export async function receiptDetails(paymentId: number) {
-//   const payment = await prisma.payment.findUnique({ where: { id: paymentId } })
-// }
+export async function receiptDetails(paymentId: number) {
+  return await prisma.payment.findUnique({ where: { id: paymentId }, include: { fee: true } })
+}
 
-// export async function getPaymentsByAccountEmail(accountEmail: string) {
-//   const student = await getStudentByAccountEmail(accountEmail)
-//   const fees = await prisma.fee.findMany({ where: { StudentId: student!.id }, include: { payments: true } })
-//   const payments: {
-//     id: number;
-//     amount: number;
-//     feeId: number;
-//     reference: number;
-//     method: string;
-//     paidAt: Date;
-//     title: string
-//   }[] = []
-//
-//   fees.forEach((fee) => {
-//     fee.payments.forEach((pay) => payments.push())
-//   })
-//
-//   return payments
-// }
+export async function getNameByStudentId(id: number) {
+  const data = await prisma.student.findUnique({ where: { id }, select: { firstName: true, lastName: true } })
+  return `${data?.firstName} ${data?.lastName}`
+}
+
+export async function getPaymentsByAccountEmail(accountEmail: string) {
+  const student = await getStudentByAccountEmail(accountEmail)
+  const fees = await prisma.fee.findMany({ where: { StudentId: student!.id }, include: { payments: true } })
+  const payments: {
+    id: number;
+    amount: number;
+    feeId: number;
+    reference: number;
+    method: string;
+    paidAt: Date;
+  }[] = []
+
+  fees.forEach((fee) => {
+    fee.payments.forEach((pay) => payments.push(pay))
+  })
+
+  return payments
+}
+
+export async function getFeesByAccountEmail(accountEmail: string) {
+  const student = await getStudentByAccountEmail(accountEmail)
+  return await prisma.fee.findMany({ where: { StudentId: student!.id }, include: { payments: true } })
+}

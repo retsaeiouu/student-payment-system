@@ -125,11 +125,11 @@ export async function deleteAccountByStudentId(studentId: number) {
     include: { account: true, fees: true }
   })
 
-  studentAccount?.fees.forEach(async (fee) => {
-    await prisma.payment.deleteMany({
-      where: { feeId: fee.id }
-    })
-  })
+  await Promise.all(
+    (studentAccount?.fees || []).map(fee =>
+      prisma.payment.deleteMany({ where: { feeId: fee.id } })
+    )
+  );
 
   await prisma.fee.deleteMany({
     where: { StudentId: studentId }

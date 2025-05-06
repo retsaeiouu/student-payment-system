@@ -9,11 +9,9 @@ import {
 } from "@/components/ui/menubar"
 import SignOutButton from "@/features/admin/SignOutButton"
 import { UserRoundIcon } from "lucide-react"
-import { getStudentByAccountEmail } from "@/features/student/actions"
+import { getFeesByAccountEmail, getStudentByAccountEmail } from "@/features/student/actions"
 import StudentFeeCard from "@/features/student/StudentFeeCard"
-
-// TODO: add receipts
-// TODO: bulk transaction
+import PaymentRecords from "@/features/student/PaymentRecords"
 
 export default async function App() {
   const account = await getAccountByCookie()
@@ -26,7 +24,28 @@ export default async function App() {
 
   const totalBalance = studentAccount.fees.reduce((total, fee) => total + fee.amount, 0)
   const pendingFees = studentAccount.fees.filter((fee) => fee.status === "PENDING")
-  const paidFees = studentAccount.fees.filter((fee) => fee.status === "PAID")
+
+  const fees = await getFeesByAccountEmail(account.email)
+  const datas: {
+    id: number;
+    amount: number;
+    feeId: number;
+    reference: number;
+    method: string;
+    paidAt: Date;
+    name: string;
+    balance: number;
+  }[] = []
+  let title: string = ""
+  let balance: number = 0
+
+  fees!.forEach((fee) => {
+    title = fee.name
+    balance = fee.amount
+    fee.payments.forEach((payment) => {
+      datas.push({ ...payment, name: title, balance })
+    })
+  })
 
   return (
     <div className="flex flex-col w-4xl mx-auto gap-8 pb-4">
@@ -70,19 +89,7 @@ export default async function App() {
       {/* pending */}
       {/* payment records */}
       <div className="self-center text-muted-foreground">Payment records</div>
-      <div className="grid grid-cols-2 gap-4">
-        {paidFees.map((fee) => (
-          <div key={fee.id}>
-            <StudentFeeCard
-              title={fee.name}
-              amount={fee.amount.toString()}
-              status={fee.status}
-              issuedAt={fee.dateCreated.toLocaleDateString()}
-              feeId={fee.id}
-            />
-          </div>
-        ))}
-      </div>
+      <PaymentRecords datas={datas} />
     </div>
   )
 }

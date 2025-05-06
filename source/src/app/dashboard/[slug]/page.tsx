@@ -14,6 +14,16 @@ import { EditStudentNameForm } from "@/features/admin/EditStudentName"
 import DeleteStudentButton from "@/features/admin/DeleteStudent"
 import { NewFeeForm } from "@/features/admin/NewFee"
 import Link from "next/link"
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { getFeesByAccountEmail } from "@/features/student/actions"
 
 export default async function StudentDetail({
   params
@@ -23,8 +33,29 @@ export default async function StudentDetail({
   const { slug } = await params
 
   const student = await getStudentById(Number(slug))
-  // const paidFees = student?.fees.filter((fee) => fee.status === "PAID")
   const pendingFees = student?.fees.filter((fee) => fee.status === "PENDING")
+
+  const fees = await getFeesByAccountEmail(student!.accountEmail)
+  const datas: {
+    id: number;
+    amount: number;
+    feeId: number;
+    reference: number;
+    method: string;
+    paidAt: Date;
+    name: string;
+    balance: number;
+  }[] = []
+  let title: string = ""
+  let balance: number = 0
+
+  fees!.forEach((fee) => {
+    title = fee.name
+    balance = fee.amount
+    fee.payments.forEach((payment) => {
+      datas.push({ ...payment, name: title, balance })
+    })
+  })
 
   return (
     <div className="flex flex-col w-4xl mx-auto gap-8 pb-4">
@@ -100,6 +131,32 @@ export default async function StudentDetail({
               ))}
             </div>
           </div>
+          <div className="self-center text-muted-foreground">Payment records</div>
+          {datas.length > 0 ? (
+            <Table>
+              <TableCaption>Record of previous transactions. Click a row to view its receipt</TableCaption>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[230px]">Fee title</TableHead>
+                  <TableHead className="w-[100px]">Method</TableHead>
+                  <TableHead>Date paid</TableHead>
+                  <TableHead className="w-[50px]">Paid amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {datas.map((data) => (
+                  <TableRow key={data.id}>
+                    <TableCell className="font-medium">{data.name}</TableCell>
+                    <TableCell>{data.method}</TableCell>
+                    <TableCell>{data.paidAt.toLocaleString()}</TableCell>
+                    <TableCell className="w-[50px]">PHP {data.amount}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="self-center">No records yet</div>
+          )}
         </>
       ) : (
         <div className="font-sans text-xl self-center">Student not found.</div>
