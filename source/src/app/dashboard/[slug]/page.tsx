@@ -134,7 +134,7 @@ export default async function StudentDetail({
           <div className="self-center text-muted-foreground">Payment records</div>
           {datas.length > 0 ? (
             <Table>
-              <TableCaption>Record of previous transactions. Click a row to view its receipt</TableCaption>
+              <TableCaption>Record of previous transactions.</TableCaption>
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[230px]">Fee title</TableHead>
